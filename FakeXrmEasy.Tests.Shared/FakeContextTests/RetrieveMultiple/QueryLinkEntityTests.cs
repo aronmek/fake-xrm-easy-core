@@ -34,7 +34,7 @@ namespace FakeXrmEasy.Tests.FakeContextTests
 
             fakedContext.Initialize(new Entity[] { testUser, testRole });
 
-            fakedContext.AddRelationship("systemuserroles", new XrmFakedRelationship
+            fakedContext.AddRelationship("systemuserroles_association", new XrmFakedRelationship
             {
                 IntersectEntity = "systemuserroles",
                 Entity1LogicalName = SystemUser.EntityLogicalName,
@@ -50,7 +50,7 @@ namespace FakeXrmEasy.Tests.FakeContextTests
                 {
                     new EntityReference(Role.EntityLogicalName, testRole.Id),
                 },
-                Relationship = new Relationship("systemuserroles")
+                Relationship = new Relationship("systemuserroles_association")
             };
 
             fakedService.Execute(request);
@@ -119,7 +119,7 @@ namespace FakeXrmEasy.Tests.FakeContextTests
 
             fakedContext.Initialize(new Entity[] { testUser, testRole, testUser2, testRole2 });
 
-            fakedContext.AddRelationship("systemuserroles", new XrmFakedRelationship
+            fakedContext.AddRelationship("systemuserroles_association", new XrmFakedRelationship
             {
                 IntersectEntity = "systemuserroles",
                 Entity1LogicalName = SystemUser.EntityLogicalName,
@@ -135,7 +135,7 @@ namespace FakeXrmEasy.Tests.FakeContextTests
                 {
                     new EntityReference(Role.EntityLogicalName, testRole.Id),
                 },
-                Relationship = new Relationship("systemuserroles")
+                Relationship = new Relationship("systemuserroles_association")
             };
 
             fakedService.Execute(request);
@@ -147,7 +147,7 @@ namespace FakeXrmEasy.Tests.FakeContextTests
                 {
                     new EntityReference(Role.EntityLogicalName, testRole2.Id),
                 },
-                Relationship = new Relationship("systemuserroles")
+                Relationship = new Relationship("systemuserroles_association")
             };
 
             fakedService.Execute(request2);
@@ -204,7 +204,7 @@ namespace FakeXrmEasy.Tests.FakeContextTests
 
             fakedContext.Initialize(new Entity[] { testUser, testRole });
 
-            fakedContext.AddRelationship("systemuserroles", new XrmFakedRelationship
+            fakedContext.AddRelationship("systemuserroles_association", new XrmFakedRelationship
             {
                 IntersectEntity = "systemuserroles",
                 Entity1LogicalName = SystemUser.EntityLogicalName,
@@ -220,7 +220,7 @@ namespace FakeXrmEasy.Tests.FakeContextTests
                 {
                     new EntityReference(Role.EntityLogicalName, testRole.Id),
                 },
-                Relationship = new Relationship("systemuserroles")
+                Relationship = new Relationship("systemuserroles_association")
             };
 
             fakedService.Execute(request);
@@ -232,10 +232,155 @@ namespace FakeXrmEasy.Tests.FakeContextTests
                 {
                     new EntityReference(Role.EntityLogicalName, testRole.Id),
                 },
-                Relationship = new Relationship("systemuserroles")
+                Relationship = new Relationship("systemuserroles_association")
             };
 
             fakedService.Execute(disassociate);
+
+            var query = new QueryExpression()
+            {
+                EntityName = "role",
+                ColumnSet = new ColumnSet("name"),
+                LinkEntities = {
+                    new LinkEntity {
+                        LinkFromEntityName = Role.EntityLogicalName,
+                        LinkFromAttributeName = "roleid",
+                        LinkToEntityName = SystemUserRoles.EntityLogicalName,
+                        LinkToAttributeName = "roleid",
+                        LinkCriteria = new FilterExpression {
+                            FilterOperator = LogicalOperator.And,
+                            Conditions = {
+                                new ConditionExpression {
+                                    AttributeName = "systemuserid",
+                                    Operator = ConditionOperator.Equal,
+                                    Values = { userId }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            var result = fakedService.RetrieveMultiple(query);
+            Assert.Empty(result.Entities);
+        }
+
+        [Fact]
+        public static void Should_Find_Faked_N_To_N_Records_Using_Associate_Method()
+        {
+            var fakedContext = new XrmFakedContext();
+            var fakedService = fakedContext.GetFakedOrganizationService();
+
+            var userId = new Guid("11111111-7982-4276-A8FE-7CE05FABEAB4");
+            var businessId = Guid.NewGuid();
+
+            var testUser = new SystemUser
+            {
+                Id = userId
+            };
+
+            var testRole = new Role
+            {
+                Id = new Guid("22222222-7982-4276-A8FE-7CE05FABEAB4"),
+                Name = "Test Role",
+                BusinessUnitId = new EntityReference(BusinessUnit.EntityLogicalName, businessId)
+            };
+
+            fakedContext.Initialize(new Entity[] { testUser, testRole });
+
+            fakedContext.AddRelationship("systemuserroles", new XrmFakedRelationship
+            {
+                IntersectEntity = "systemuserroles",
+                Entity1LogicalName = SystemUser.EntityLogicalName,
+                Entity1Attribute = "systemuserid",
+                Entity2LogicalName = Role.EntityLogicalName,
+                Entity2Attribute = "roleid"
+            });
+
+            fakedService.Associate("systemuserroles",
+                                        testUser.Id, 
+                                        new Relationship("systemuserroles"),
+                                        new EntityReferenceCollection()
+                                        {
+                                            new EntityReference(Role.EntityLogicalName, testRole.Id),
+                                        });
+
+            var query = new QueryExpression()
+            {
+                EntityName = "role",
+                ColumnSet = new ColumnSet("name"),
+                LinkEntities = {
+                    new LinkEntity {
+                        LinkFromEntityName = Role.EntityLogicalName,
+                        LinkFromAttributeName = "roleid",
+                        LinkToEntityName = SystemUserRoles.EntityLogicalName,
+                        LinkToAttributeName = "roleid",
+                        LinkCriteria = new FilterExpression {
+                            FilterOperator = LogicalOperator.And,
+                            Conditions = {
+                                new ConditionExpression {
+                                    AttributeName = "systemuserid",
+                                    Operator = ConditionOperator.Equal,
+                                    Values = { userId }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            var result = fakedService.RetrieveMultiple(query);
+            Assert.NotEmpty(result.Entities);
+            Assert.Equal(1, result.Entities.Count);
+        }
+
+        [Fact]
+        public static void Should_Not_Find_Faked_N_To_N_Records_If_Disassociated_Again_Using_Disassociate_Method()
+        {
+            var fakedContext = new XrmFakedContext();
+            var fakedService = fakedContext.GetFakedOrganizationService();
+
+            var userId = new Guid("11111111-7982-4276-A8FE-7CE05FABEAB4");
+            var businessId = Guid.NewGuid();
+
+            var testUser = new SystemUser
+            {
+                Id = userId
+            };
+
+            var testRole = new Role
+            {
+                Id = new Guid("22222222-7982-4276-A8FE-7CE05FABEAB4"),
+                Name = "Test Role",
+                BusinessUnitId = new EntityReference(BusinessUnit.EntityLogicalName, businessId)
+            };
+
+            fakedContext.Initialize(new Entity[] { testUser, testRole });
+
+            fakedContext.AddRelationship("systemuserroles", new XrmFakedRelationship
+            {
+                IntersectEntity = "systemuserroles",
+                Entity1LogicalName = SystemUser.EntityLogicalName,
+                Entity1Attribute = "systemuserid",
+                Entity2LogicalName = Role.EntityLogicalName,
+                Entity2Attribute = "roleid"
+            });
+
+            fakedService.Associate("systemuserroles",
+                                        testUser.Id,
+                                        new Relationship("systemuserroles"),
+                                        new EntityReferenceCollection()
+                                        {
+                                            new EntityReference(Role.EntityLogicalName, testRole.Id),
+                                        });
+
+            fakedService.Disassociate("systemuserroles",
+                                        testUser.Id,
+                                        new Relationship("systemuserroles"),
+                                        new EntityReferenceCollection()
+                                        {
+                                            new EntityReference(Role.EntityLogicalName, testRole.Id),
+                                        });
 
             var query = new QueryExpression()
             {
