@@ -23360,7 +23360,7 @@ namespace Crm
 		/// <summary>
 		/// Enter the date when the campaign was closed or completed.
 		/// </summary>
-		[Microsoft.Xrm.Sdk.AttributeLogicalNameAttribute("actualend")]
+		[Microsoft.Xrm.Sdk.AttributeLogicalNameAttribute("actualEnd")]
 		public System.Nullable<System.DateTime> ActualEnd
 		{
 			get
