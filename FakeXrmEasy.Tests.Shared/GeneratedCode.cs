@@ -8,6 +8,9 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Client;
+
 [assembly: Microsoft.Xrm.Sdk.Client.ProxyTypesAssemblyAttribute()]
 
 namespace Crm
@@ -210759,11 +210762,34 @@ namespace Crm
 	[System.CodeDom.Compiler.GeneratedCodeAttribute("CrmSvcUtil", "7.0.0000.3543")]
 	public partial class XrmServiceContext : Microsoft.Xrm.Sdk.Client.OrganizationServiceContext
 	{
-		
-		/// <summary>
-		/// Constructor.
-		/// </summary>
-		public XrmServiceContext(Microsoft.Xrm.Sdk.IOrganizationService service) : 
+        protected override void OnEndLinkTracking(Entity entity, Relationship relationship, Entity target)
+        {
+            base.OnEndLinkTracking(entity, relationship, target);
+        }
+
+        protected override void OnBeginLinkTracking(Entity source, Relationship relationship, Entity target)
+        {
+            base.OnBeginLinkTracking(source, relationship, target);
+        }
+
+        protected override void OnExecute(OrganizationRequest request, OrganizationResponse response)
+        {
+            base.OnExecute(request, response);
+        }
+
+        protected override void OnSavingChanges(SaveChangesOptions options)
+        {
+            base.OnSavingChanges(options);
+        }
+
+        protected override void OnSaveChanges(SaveChangesResultCollection results)
+        {
+            base.OnSaveChanges(results);
+        }
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        public XrmServiceContext(Microsoft.Xrm.Sdk.IOrganizationService service) : 
 				base(service)
 		{
 		}
