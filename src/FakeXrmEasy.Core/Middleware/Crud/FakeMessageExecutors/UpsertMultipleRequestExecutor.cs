@@ -48,14 +48,14 @@ namespace FakeXrmEasy.Middleware.Crud.FakeMessageExecutors
                 var entityId = ctx.GetRecordUniqueId(record.ToEntityReferenceWithKeyAttributes(), validate: false);
                 if (ctx.ContainsEntity(record.LogicalName, entityId))
                 {
-                    ctx.UpdateEntity(record);
+                    service.Update(record);
                     response = new UpsertResponse();
                     response.Results.Add("RecordCreated", false);
                     response.Results.Add("Target", new EntityReference(record.LogicalName, entityId));
                 }
                 else
                 {
-                    var id = ctx.CreateEntity(record, isUpsert: true);
+                    var id = service.Create(record);
                     response = new UpsertResponse();
                     response.Results.Add("RecordCreated", true);
                     response.Results.Add("Target", new EntityReference(record.LogicalName, id));

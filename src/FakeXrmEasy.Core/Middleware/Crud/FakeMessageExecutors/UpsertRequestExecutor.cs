@@ -33,24 +33,55 @@ namespace FakeXrmEasy.Middleware.Crud.FakeMessageExecutors
         /// <returns></returns>
         public OrganizationResponse Execute(OrganizationRequest request, IXrmFakedContext ctx)
         {
-            var fakedContext = ctx as XrmFakedContext;
             var upsertRequest = (UpsertRequest)request;
-            bool recordCreated;
-
             var service = ctx.GetOrganizationService();
-
-            var entityLogicalName = upsertRequest.Target.LogicalName;
-            var entityId = ctx.GetRecordUniqueId(upsertRequest.Target.ToEntityReferenceWithKeyAttributes(), validate: false);
-
-            if (fakedContext.ContainsEntity(entityLogicalName, entityId))
+            
+            var target = upsertRequest.Target;
+            var entityLogicalName = target.LogicalName;
+            
+            var entityId = ctx.GetRecordUniqueId(target.ToEntityReferenceWithKeyAttributes(), validate: false);
+            
+            bool exists = false;
+            
+            if (entityId != Guid.Empty)
             {
+                if (ctx is XrmFakedContext concreteContext)
+                {
+                    exists = concreteContext.ContainsEntity(entityLogicalName, entityId);
+                }
+                else
+                {
+                    try
+                    {
+                        service.Retrieve(entityLogicalName, entityId, new Microsoft.Xrm.Sdk.Query.ColumnSet(false));
+                        exists = true;
+                    }
+                    catch (System.ServiceModel.FaultException)
+                    {
+                        exists = false;
+                    }
+                }
+            }
+            
+            bool recordCreated;
+            if (exists)
+            {
+                if (target.Id == Guid.Empty)
+                {
+                    target.Id = entityId;
+                }
+                
+                service.Update(target);
                 recordCreated = false;
-                service.Update(upsertRequest.Target);
             }
             else
             {
+                if (target.KeyAttributes.Count > 0)
+                {
+                    target.KeyAttributes.Clear();
+                }
+                entityId = service.Create(target);
                 recordCreated = true;
-                entityId = ctx.CreateEntity(upsertRequest.Target, isUpsert: true);
             }
 
             var result = new UpsertResponse();
