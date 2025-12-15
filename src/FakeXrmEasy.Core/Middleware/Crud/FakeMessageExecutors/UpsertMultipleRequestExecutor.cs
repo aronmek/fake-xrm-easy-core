@@ -55,10 +55,23 @@ namespace FakeXrmEasy.Middleware.Crud.FakeMessageExecutors
                 }
                 else
                 {
-                    var id = service.Create(record);
+                    var recordToCreate = record.Clone();
+                    if (recordToCreate.KeyAttributes != null && recordToCreate.KeyAttributes.Count > 0)
+                    {
+                        foreach (var key in recordToCreate.KeyAttributes)
+                        {
+                            if (!recordToCreate.Attributes.ContainsKey(key.Key))
+                            {
+                                recordToCreate[key.Key] = key.Value;
+                            }
+                        }
+                        recordToCreate.KeyAttributes.Clear();
+                    }
+
+                    var id = service.Create(recordToCreate);
                     response = new UpsertResponse();
                     response.Results.Add("RecordCreated", true);
-                    response.Results.Add("Target", new EntityReference(record.LogicalName, id));
+                    response.Results.Add("Target", new EntityReference(recordToCreate.LogicalName, id));
                 }
                 results.Add(response);
             }
