@@ -9,7 +9,11 @@
     <TargetFrameworks Condition="'$(Configuration)'=='FAKE_XRM_EASY'">net452</TargetFrameworks>
     <PackageId>FakeXrmEasy.Core</PackageId>
     <PackageId Condition="'$(Configuration)'=='FAKE_XRM_EASY_9' Or '$(Configuration)'=='Debug'">FakeXrmEasy.Core.v9</PackageId>
+<<<<<<< Updated upstream
     <VersionPrefix>2.8.0</VersionPrefix>
+=======
+    <VersionPrefix>2.8.1</VersionPrefix>
+>>>>>>> Stashed changes
     <Authors>Jordi Montaña</Authors>
     <Company>Dynamics Value</Company>
     <Title>FakeXrmEasy Core</Title>
