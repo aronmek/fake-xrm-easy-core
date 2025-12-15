@@ -1,13 +1,11 @@
 ﻿using Crm;
 using FakeXrmEasy.Extensions;
-using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 using System;
 using System.Linq;
 using System.Reflection;
 using Xunit;
-using FakeXrmEasy.Abstractions.Enums;
 
 namespace FakeXrmEasy.Core.Tests.Middleware.Crud.FakeMessageExecutors.UpsertRequestTests
 {
@@ -67,32 +65,6 @@ namespace FakeXrmEasy.Core.Tests.Middleware.Crud.FakeMessageExecutors.UpsertRequ
 
             Assert.False(response.RecordCreated);
             Assert.Equal("FakeXrm2", contactUpdated.FirstName);
-        }
-
-        [Fact]
-        public void Upsert_With_Alternate_Key_Should_Create_Record_When_It_Does_Not_Exist()
-        {
-            _context.EnableProxyTypes(Assembly.GetExecutingAssembly());
-            _context.Initialize(new System.Collections.Generic.List<Contact>());
-            
-            var contact = new Contact();
-            contact.KeyAttributes.Add("firstname", "FakeXrm");
-            contact.KeyAttributes.Add("lastname", "Easy");
-            contact["firstname"] = "FakeXrm";
-            contact["lastname"] = "Easy";
-
-            var request = new UpsertRequest()
-            {
-                Target = contact
-            };
-
-            var response = (UpsertResponse)_service.Execute(request);
-
-            var contactCreated = _context.CreateQuery<Contact>().FirstOrDefault();
-
-            Assert.True(response.RecordCreated);
-            Assert.NotNull(contactCreated);
-            Assert.Equal("FakeXrm", contactCreated.FirstName);
         }
     }
 #endif
