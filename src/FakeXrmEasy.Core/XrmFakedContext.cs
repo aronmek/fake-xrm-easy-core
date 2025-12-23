@@ -349,6 +349,20 @@ namespace FakeXrmEasy
             this.Initialize(new List<Entity>() { entity });
         }
 
+        /// <summary>
+        /// Returns all the entities in the context
+        /// </summary>
+        /// <returns></returns>
+        public List<Entity> GetAllEntities()
+        {
+            var entities = new List<Entity>();
+            foreach (var table in Db._tables)
+            {
+                entities.AddRange(table.Value.Rows);
+            }
+            return entities;
+        }
+
 
         
         private void ValidateEntityReferences(Entity e)
