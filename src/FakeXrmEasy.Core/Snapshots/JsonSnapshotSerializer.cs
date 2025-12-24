@@ -1,3 +1,4 @@
+#if !NET452
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -52,3 +53,4 @@ namespace FakeXrmEasy.Snapshots
         }
     }
 }
+#endif

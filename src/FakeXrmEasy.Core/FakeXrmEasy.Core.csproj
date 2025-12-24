@@ -9,6 +9,7 @@
     <TargetFrameworks Condition="'$(Configuration)'=='FAKE_XRM_EASY'">net452</TargetFrameworks>
     <PackageId>FakeXrmEasy.Core</PackageId>
     <PackageId Condition="'$(Configuration)'=='FAKE_XRM_EASY_9' Or '$(Configuration)'=='Debug'">FakeXrmEasy.Core.v9</PackageId>
+    <VersionPrefix>2.8.1</VersionPrefix>
 
 
     <Authors>Jordi Montaña</Authors>
@@ -100,6 +101,10 @@
 
   <ItemGroup>
     <PackageReference Include="FakeItEasy" Version="[6.0.0,7.0)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net452'">
+    <PackageReference Include="System.Text.Json" Version="6.0.7" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)'=='FAKE_XRM_EASY'">

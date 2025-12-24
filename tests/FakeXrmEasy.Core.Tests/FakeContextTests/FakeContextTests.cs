@@ -225,10 +225,15 @@ namespace FakeXrmEasy.Core.Tests
         [Fact]
         public void When_using_proxy_types_entity_names_are_validated()
         {
+            // Explicitly enable proxy types
+            _context.EnableProxyTypes(Assembly.GetAssembly(typeof(Contact)));
+            
             var c = new Contact() { Id = Guid.NewGuid(), FirstName = "Jordi" };
             _context.Initialize(new List<Entity>() { c });
 
-            Assert.Throws<Exception>(() => _service.Create(new Entity("thisDoesntExist")));
+            // With proxy types enabled, creating an entity with unknown logical name should throw
+            var ex = Assert.Throws<InvalidOperationException>(() => _service.Create(new Entity("thisDoesntExist")));
+            Assert.Equal("The entity logical name thisDoesntExist is not valid.", ex.Message);
         }
 
         [Fact]
@@ -355,25 +360,25 @@ namespace FakeXrmEasy.Core.Tests
         }
         
         [Fact]
-        public void Should_throw_exception_when_finding_reflected_type_by_entity_logical_name_if_exists_in_more_than_one_assembly()
+        public void Should_return_null_when_finding_reflected_type_by_entity_logical_name_if_exists_in_more_than_one_assembly()
         {
             var assembly = typeof(Crm.Account).Assembly;
             var assembly2 = typeof(DataverseEntities.Account).Assembly;
             _context.EnableProxyTypes(assembly);
             _context.EnableProxyTypes(assembly2);
             
-            Assert.Throws<MultipleEarlyBoundTypesFoundException>(() => _context.FindReflectedType(Account.EntityLogicalName));
+            Assert.Null(_context.FindReflectedType(Account.EntityLogicalName));
         }
         
         [Fact]
-        public void Should_throw_exception_when_finding_reflected_type_by_entity_type_code_if_exists_in_more_than_one_assembly()
+        public void Should_return_null_when_finding_reflected_type_by_entity_type_code_if_exists_in_more_than_one_assembly()
         {
             var assembly = typeof(Crm.Account).Assembly;
             var assembly2 = typeof(DataverseEntities.Account).Assembly;
             _context.EnableProxyTypes(assembly);
             _context.EnableProxyTypes(assembly2);
             
-            Assert.Throws<MultipleEarlyBoundTypesFoundException>(() => _context.FindReflectedType(Account.EntityTypeCode));
+            Assert.Null(_context.FindReflectedType(Account.EntityTypeCode));
         }
     }
 }

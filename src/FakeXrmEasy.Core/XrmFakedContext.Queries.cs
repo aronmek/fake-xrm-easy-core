@@ -26,16 +26,47 @@ namespace FakeXrmEasy
         /// <exception cref="InvalidOperationException"></exception>
         public Type FindReflectedType(string logicalName)
         {
-            var types =
-                ProxyTypesAssemblies.Select(a => FindReflectedType(logicalName, a))
-                                    .Where(t => t != null);
-
-            if (types.Count() > 1)
+            var types = GetReflectedTypes(logicalName);
+            
+            if (types.Count > 1)
             {
-                throw new MultipleEarlyBoundTypesFoundException(logicalName, types);
+                return null; // Multiple types found - ambiguous, fallback to late-bound
+            }
+            
+            return types.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Gets all early-bound types based on an entity's logical name across all proxy assemblies
+        /// </summary>
+        /// <param name="logicalName"></param>
+        /// <returns></returns>
+        public List<Type> GetReflectedTypes(string logicalName)
+        {
+            var key = logicalName?.ToLower();
+            if (key == null)
+            {
+                return new List<Type>();
             }
 
-            return types.SingleOrDefault();
+            // Check cache first
+            if (_reflectedTypesCache != null && _reflectedTypesCache.TryGetValue(key, out var cachedTypes))
+            {
+                return new List<Type>(cachedTypes);
+            }
+
+            // Not in cache, perform lookup
+            var types = ProxyTypesAssemblies.Select(a => FindReflectedType(logicalName, a))
+                                    .Where(t => t != null)
+                                    .ToList();
+
+            // Store in cache
+            if (_reflectedTypesCache != null)
+            {
+                _reflectedTypesCache[key] = types;
+            }
+
+            return types;
         }
         
         /// <summary>
@@ -48,14 +79,15 @@ namespace FakeXrmEasy
         {
             var types =
                 ProxyTypesAssemblies.Select(a => FindReflectedType(entityTypeCode, a))
-                    .Where(t => t != null);
+                    .Where(t => t != null)
+                    .ToList();
 
-            if (types.Count() > 1)
+            if (types.Count > 1)
             {
-                throw new MultipleEarlyBoundTypesFoundException(entityTypeCode, types);
+                return null; // Multiple types found - ambiguous, fallback to late-bound
             }
 
-            return types.SingleOrDefault();
+            return types.FirstOrDefault();
         }
 
         /// <summary>
@@ -164,7 +196,7 @@ namespace FakeXrmEasy
 
                 return injectedType;
             }
-
+            
             if (attributeInfo.PropertyType.FullName.EndsWith("Enum") || attributeInfo.PropertyType.BaseType?.FullName.EndsWith("Enum") == true)
             {
                 return typeof(int);
@@ -246,7 +278,7 @@ namespace FakeXrmEasy
         protected IQueryable<T> CreateQuery<T>(string entityLogicalName)
             where T : Entity
         {
-            var subClassType = FindReflectedType(entityLogicalName);
+            var subClassType = typeof(T) != typeof(Entity) ? typeof(T) : FindReflectedType(entityLogicalName);
             if (subClassType == null && !(typeof(T) == typeof(Entity)) || (typeof(T) == typeof(Entity) && string.IsNullOrWhiteSpace(entityLogicalName)))
             {
                 throw new Exception($"The type {entityLogicalName} was not found");

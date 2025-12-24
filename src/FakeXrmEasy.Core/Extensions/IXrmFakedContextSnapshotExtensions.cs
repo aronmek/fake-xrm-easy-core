@@ -1,8 +1,12 @@
+#if !NET452
 using FakeXrmEasy.Snapshots;
+using FakeXrmEasy.Middleware;
+using FakeXrmEasy.Abstractions;
 using Microsoft.Xrm.Sdk;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace FakeXrmEasy.Extensions
@@ -24,7 +28,7 @@ namespace FakeXrmEasy.Extensions
         /// <param name="testFilePath">The test file path (automatically populated via CallerFilePath)</param>
         /// <param name="lineNumber">The calling line number (automatically populated via CallerLineNumber)</param>
         public static void SaveSnapshot(
-            this XrmFakedContext context,
+            this IXrmFakedContext context,
             string baseDirectory,
             string snapshotName = null,
             [CallerMemberName] string testName = null,
@@ -45,7 +49,7 @@ namespace FakeXrmEasy.Extensions
         /// <param name="testFilePath">The test file path (automatically populated via CallerFilePath)</param>
         /// <param name="lineNumber">The calling line number (automatically populated via CallerLineNumber)</param>
         public static void SaveSnapshot(
-            this XrmFakedContext context,
+            this IXrmFakedContext context,
             string baseDirectory,
             ISnapshotSerializer serializer,
             string snapshotName = null,
@@ -83,7 +87,7 @@ namespace FakeXrmEasy.Extensions
         /// <param name="testFilePath">The test file path (automatically populated via CallerFilePath)</param>
         /// <param name="lineNumber">The calling line number (automatically populated via CallerLineNumber)</param>
         public static void InitializeFromSnapshot(
-            this XrmFakedContext context,
+            this IXrmFakedContext context,
             string baseDirectory,
             string snapshotName = null,
             [CallerMemberName] string testName = null,
@@ -104,7 +108,7 @@ namespace FakeXrmEasy.Extensions
         /// <param name="testFilePath">The test file path (automatically populated via CallerFilePath)</param>
         /// <param name="lineNumber">The calling line number (automatically populated via CallerLineNumber)</param>
         public static void InitializeFromSnapshot(
-            this XrmFakedContext context,
+            this IXrmFakedContext context,
             string baseDirectory,
             ISnapshotSerializer serializer,
             string snapshotName = null,
@@ -138,9 +142,9 @@ namespace FakeXrmEasy.Extensions
         /// <param name="testFilePath">The test file path (automatically populated via CallerFilePath)</param>
         /// <param name="lineNumber">The calling line number (automatically populated via CallerLineNumber)</param>
         public static void InitializeFromSnapshotOrCreate(
-            this XrmFakedContext context,
+            this IXrmFakedContext context,
             string baseDirectory,
-            Action<XrmFakedContext> setupCallback,
+            Action<IXrmFakedContext> setupCallback,
             string snapshotName = null,
             [CallerMemberName] string testName = null,
             [CallerFilePath] string testFilePath = null,
@@ -161,10 +165,10 @@ namespace FakeXrmEasy.Extensions
         /// <param name="testFilePath">The test file path (automatically populated via CallerFilePath)</param>
         /// <param name="lineNumber">The calling line number (automatically populated via CallerLineNumber)</param>
         public static void InitializeFromSnapshotOrCreate(
-            this XrmFakedContext context,
+            this IXrmFakedContext context,
             string baseDirectory,
             ISnapshotSerializer serializer,
-            Action<XrmFakedContext> setupCallback,
+            Action<IXrmFakedContext> setupCallback,
             string snapshotName = null,
             [CallerMemberName] string testName = null,
             [CallerFilePath] string testFilePath = null,
@@ -184,12 +188,23 @@ namespace FakeXrmEasy.Extensions
             }
             else
             {
-                // Execute callback to populate context
-                setupCallback?.Invoke(context);
+                // Execute callback to populate context in a clean environment
+                // We create a new context with the same license and proxy types but without any other middleware (like pipeline simulation)
+                var cleanContext = XrmFakedContextFactory.New(context.LicenseContext.Value);
+                foreach (var assembly in context.ProxyTypesAssemblies)
+                {
+                    cleanContext.EnableProxyTypes(assembly);
+                }
+
+                setupCallback?.Invoke(cleanContext);
+
+                // Get entities from clean context
+                var entities = cleanContext.GetAllEntities();
+                
+                // Initialize main context
+                context.Initialize(entities);
 
                 // Save snapshot for next time
-                var entities = context.GetAllEntities();
-                
                 // Convert entities to snapshots
                 var snapshotData = new SnapshotData
                 {
@@ -231,3 +246,4 @@ namespace FakeXrmEasy.Extensions
         }
     }
 }
+#endif

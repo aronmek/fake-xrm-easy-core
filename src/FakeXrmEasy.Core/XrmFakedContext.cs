@@ -22,6 +22,7 @@ using System.Runtime.CompilerServices;
 using FakeXrmEasy.Abstractions.FileStorage;
 using FakeXrmEasy.Core.EmailSettings;
 using FakeXrmEasy.Core.Exceptions;
+using FakeXrmEasy.Extensions;
 using FakeXrmEasy.Core.FileStorage.Db;
 
 [assembly: InternalsVisibleTo("FakeXrmEasy.Core.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100c124cb50761165a765adf6078bde555a7c5a2b692ed6e6ec9df0bd7d20da69170bae9bf95e874fa50995cc080af404ccad36515fa509c4ea6599a0502c1642db254a293e023c47c79ce69889c6ba921d124d896d87f0baaa9ea1d87b28589ffbe7b08492606bacef19dc4bc4cefb0d525be63ee722b02dc8c79688a7a8f623a2")]
@@ -56,6 +57,12 @@ namespace FakeXrmEasy
         /// All proxy type assemblies available on mocked database.
         /// </summary>
         private List<Assembly> _proxyTypesAssemblies { get; set; }
+
+        /// <summary>
+        /// Cache for reflected types lookup by logical name for performance
+        /// Key: logical name (lowercase), Value: List of types found across all assemblies
+        /// </summary>
+        private Dictionary<string, List<Type>> _reflectedTypesCache { get; set; }
 
         /// <summary>
         /// 
@@ -230,6 +237,7 @@ namespace FakeXrmEasy
             InitializationLevel = EntityInitializationLevel.Default;
 
             _proxyTypesAssemblies = new List<Assembly>();
+            _reflectedTypesCache = new Dictionary<string, List<Type>>();
 
             GetOrganizationService();
 
@@ -349,22 +357,6 @@ namespace FakeXrmEasy
             this.Initialize(new List<Entity>() { entity });
         }
 
-        /// <summary>
-        /// Returns all the entities in the context
-        /// </summary>
-        /// <returns></returns>
-        public List<Entity> GetAllEntities()
-        {
-            var entities = new List<Entity>();
-            foreach (var table in Db._tables)
-            {
-                entities.AddRange(table.Value.Rows);
-            }
-            return entities;
-        }
-
-
-        
         private void ValidateEntityReferences(Entity e)
         {
             foreach (var item in e.Attributes)
@@ -399,6 +391,7 @@ namespace FakeXrmEasy
             }
 
             _proxyTypesAssemblies.Add(assembly);
+            _reflectedTypesCache.Clear(); // Clear cache when new assembly is added
         }
 
         /// <summary>

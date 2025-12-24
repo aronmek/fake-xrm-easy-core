@@ -1,3 +1,4 @@
+#if !NET452
 using FakeXrmEasy.Abstractions;
 using FakeXrmEasy.Abstractions.Enums;
 using FakeXrmEasy.Extensions;
@@ -262,3 +263,4 @@ namespace FakeXrmEasy.Core.Tests.Snapshots
         }
     }
 }
+#endif

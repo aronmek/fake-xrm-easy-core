@@ -1,3 +1,4 @@
+#if !NET452
 using Microsoft.Xrm.Sdk;
 using System;
 using System.Collections.Generic;
@@ -101,6 +102,15 @@ namespace FakeXrmEasy.Snapshots
                 return new OptionSetValueSnapshot
                 {
                     Value = optionSet.Value
+                };
+            }
+
+            // Enum → OptionSetValueSnapshot
+            if (value.GetType().IsEnum)
+            {
+                return new OptionSetValueSnapshot
+                {
+                    Value = (int)value
                 };
             }
 
@@ -312,3 +322,4 @@ namespace FakeXrmEasy.Snapshots
         }
     }
 }
+#endif

@@ -46,17 +46,18 @@ namespace FakeXrmEasy
             }
 
             // Don't fail with invalid operation exception, if no record of this entity exists, but entity is known
+            // When proxy types are enabled, check if the entity type exists in any assembly
             if (!Db.ContainsTable(record.LogicalName) && !Db.ContainsTableMetadata(record.LogicalName))
             {
-                if (ProxyTypesAssemblies == null || !ProxyTypesAssemblies.Any())
+                if (ProxyTypesAssemblies != null && ProxyTypesAssemblies.Any())
                 {
-                    throw new InvalidOperationException($"The entity logical name {record.LogicalName} is not valid.");
+                    // If proxy types are enabled but no type found, validate the entity name
+                    if (!GetReflectedTypes(record.LogicalName).Any())
+                    {
+                        throw new InvalidOperationException($"The entity logical name {record.LogicalName} is not valid.");
+                    }
                 }
-
-                if (!ProxyTypesAssemblies.SelectMany(p=> p.GetTypes()).Any(type => FindReflectedType(record.LogicalName) != null))
-                {
-                    throw new InvalidOperationException($"The entity logical name {record.LogicalName} is not valid.");
-                }
+                // If no proxy types are enabled, allow the entity (dynamic entities scenario)
             }
 
 #if !FAKE_XRM_EASY && !FAKE_XRM_EASY_2013 && !FAKE_XRM_EASY_2015
@@ -404,6 +405,21 @@ namespace FakeXrmEasy
                 throw new InvalidOperationException("The LogicalName property must not be empty");
             }
             
+            // If proxy types are enabled, validate that the entity logical name exists in at least one assembly
+            if (ProxyTypesAssemblies != null && ProxyTypesAssemblies.Any())
+            {
+                // Check if this is an early-bound entity (subclass of Entity)
+                // If it's already an early-bound type, it's valid by definition
+                if (e.GetType() == typeof(Entity))
+                {
+                    // It's a late-bound entity, check if the logical name is valid
+                    if (!GetReflectedTypes(e.LogicalName).Any())
+                    {
+                        throw new InvalidOperationException($"The entity logical name {e.LogicalName} is not valid.");
+                    }
+                }
+            }
+            
         }
 
         
@@ -469,9 +485,10 @@ namespace FakeXrmEasy
             if (ProxyTypesAssemblies.Count() > 0)
             {
                 //If the context is using a proxy types assembly then we can just guess the metadata from the generated attributes
-                var type = FindReflectedType(e.LogicalName);
-                if (type != null)
+                var types = GetReflectedTypes(e.LogicalName);
+                if (types.Any())
                 {
+                    var type = types.First();
                     var props = type.GetProperties();
                     foreach (var p in props)
                     {
@@ -480,8 +497,15 @@ namespace FakeXrmEasy
                     }
                 }
                 else
-                    throw new Exception(string.Format("Couldnt find reflected type for {0}", e.LogicalName));
-
+                {
+                    //If dynamic entities are being used, then the only way of guessing if a property exists is just by checking
+                    //if the entity has the attribute in the dictionary
+                    foreach (var attKey in e.Attributes.Keys)
+                    {
+                        if (!AttributeMetadataNames[e.LogicalName].ContainsKey(attKey))
+                            AttributeMetadataNames[e.LogicalName].Add(attKey, attKey);
+                    }
+                }
             }
             else
             {

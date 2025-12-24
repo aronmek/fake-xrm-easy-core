@@ -48,8 +48,11 @@ namespace FakeXrmEasy.Core.Tests.Middleware.Crud.FakeMessageExecutors.RetrieveRe
         [Fact]
         public void When_retrieve_is_invoked_with_a_non_existing_logical_name_an_exception_is_thrown()
         {
-            var ex = Assert.Throws<InvalidOperationException>(() => _service.Retrieve("account", Guid.NewGuid(), new ColumnSet(true)));
-            Assert.Equal("The entity logical name account is not valid.", ex.Message);
+            // Enable proxy types so that 'account' is recognized as valid, but the record doesn't exist
+            _context.EnableProxyTypes(Assembly.GetAssembly(typeof(Account)));
+            
+            var ex = Assert.Throws<FaultException<OrganizationServiceFault>>(() => _service.Retrieve("account", Guid.NewGuid(), new ColumnSet(true)));
+            Assert.Contains("Does Not Exist", ex.Message);
         }
 
         [Fact]

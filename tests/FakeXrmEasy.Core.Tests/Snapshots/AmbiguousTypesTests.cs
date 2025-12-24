@@ -1,3 +1,4 @@
+#if !NET452
 using FakeXrmEasy.Snapshots;
 using Microsoft.Xrm.Sdk;
 using System;
@@ -67,3 +68,4 @@ namespace FakeXrmEasy.Core.Tests.Snapshots
 
     }
 }
+#endif

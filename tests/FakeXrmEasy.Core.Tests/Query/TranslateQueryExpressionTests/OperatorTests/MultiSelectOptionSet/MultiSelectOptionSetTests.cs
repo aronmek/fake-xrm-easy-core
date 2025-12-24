@@ -19,6 +19,8 @@ namespace FakeXrmEasy.Core.Tests.Query.TranslateQueryExpressionTests.OperatorTes
 
         public MultiSelectOptionSetTests()
         {
+            _context.EnableProxyTypes(System.Reflection.Assembly.GetAssembly(typeof(Contact)));
+
             _contactWithOptions12 = new Contact()
             {
                 Id = Guid.NewGuid(),

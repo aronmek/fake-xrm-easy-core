@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using Xunit;
 using Crm;
 using Microsoft.Xrm.Sdk;
@@ -11,6 +12,9 @@ namespace FakeXrmEasy.Core.Tests.Issues
         [Fact]
         public void Reproduce_issue_312()
         {
+            // Enable only Crm assembly to avoid ambiguous type resolution
+            _context.EnableProxyTypes(Assembly.GetAssembly(typeof(Account)));
+            
             var accountId = Guid.NewGuid();
 
             Account account = new Account();
