@@ -27,12 +27,6 @@ namespace FakeXrmEasy
         public Type FindReflectedType(string logicalName)
         {
             var types = GetReflectedTypes(logicalName);
-            
-            if (types.Count > 1)
-            {
-                return null; // Multiple types found - ambiguous, fallback to late-bound
-            }
-            
             return types.FirstOrDefault();
         }
 
@@ -81,11 +75,6 @@ namespace FakeXrmEasy
                 ProxyTypesAssemblies.Select(a => FindReflectedType(entityTypeCode, a))
                     .Where(t => t != null)
                     .ToList();
-
-            if (types.Count > 1)
-            {
-                return null; // Multiple types found - ambiguous, fallback to late-bound
-            }
 
             return types.FirstOrDefault();
         }

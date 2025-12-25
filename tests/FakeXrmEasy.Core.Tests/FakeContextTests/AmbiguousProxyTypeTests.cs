@@ -11,12 +11,13 @@ namespace FakeXrmEasy.Core.Tests.FakeContextTests
     public class AmbiguousProxyTypeTests : FakeXrmEasyTestsBase
     {
         [Fact]
-        public void When_multiple_proxy_types_are_enabled_FindReflectedType_should_return_null_by_default()
+        public void When_multiple_proxy_types_are_enabled_FindReflectedType_should_return_the_first_one_found()
         {
             _context.EnableProxyTypes(typeof(Crm.Account).Assembly);
             _context.EnableProxyTypes(typeof(DataverseEntities.Account).Assembly);
 
-            Assert.Null(_context.FindReflectedType("account"));
+            Assert.NotNull(_context.FindReflectedType("account"));
+            Assert.Equal(typeof(Crm.Account), _context.FindReflectedType("account"));
         }
 
         [Fact]
