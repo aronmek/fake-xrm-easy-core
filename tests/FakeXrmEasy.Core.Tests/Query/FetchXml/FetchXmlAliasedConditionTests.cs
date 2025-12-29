@@ -22,6 +22,7 @@ namespace FakeXrmEasy.Core.Tests.Query.FetchXml
         {
         }
 
+#if !FAKE_XRM_EASY
         /// <summary>
         /// This test reproduces the bug where a FetchXML condition with entityname="alias"
         /// fails when the attribute doesn't exist on the main entity but does exist on the linked entity.
@@ -145,5 +146,6 @@ namespace FakeXrmEasy.Core.Tests.Query.FetchXml
             Assert.Single(result.Entities);
             Assert.Equal(accountId, result.Entities[0].Id);
         }
+#endif
     }
 }

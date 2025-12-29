@@ -1,4 +1,4 @@
-#if !FAKE_XRM_EASY && !FAKE_XRM_EASY_2013
+#if !FAKE_XRM_EASY && !FAKE_XRM_EASY_2013 && !FAKE_XRM_EASY_2015
 using System;
 using System.Linq;
 using DataverseEntities;

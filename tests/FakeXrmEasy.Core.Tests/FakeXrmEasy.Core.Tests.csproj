@@ -63,6 +63,10 @@
     <ProjectReference Include="..\DataverseEntities\DataverseEntities.csproj" />
   </ItemGroup>
   
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
+    <PackageReference Include="System.Text.Json" Version="6.0.7" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(TargetFramework)' == 'net462' And '$(Configuration)'=='FAKE_XRM_EASY_9'">
     <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.52" />
     <PackageReference Include="Microsoft.CrmSdk.XrmTooling.CoreAssembly" Version="9.1.1.45" />
@@ -132,11 +136,11 @@
     <PackageReference Include="FakeXrmEasy.Abstractions.v9" Version="[2.8.0-*,3.0)" />
   </ItemGroup>
   
-  <ItemGroup Condition="'$(PackTests)' == ''">
+  <ItemGroup Condition="'$(PackTests)' == '' Or '$(PackTests)' == 'true'">
     <ProjectReference Include="..\..\src\FakeXrmEasy.Core\FakeXrmEasy.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(PackTests)' == 'true' And '$(Configuration)'=='FAKE_XRM_EASY'">
+  <!-- <ItemGroup Condition="'$(PackTests)' == 'true' And '$(Configuration)'=='FAKE_XRM_EASY'">
     <PackageReference Include="FakeXrmEasy.Core.v2011" Version="[2.8.0-*,3.0)" />
   </ItemGroup>
   <ItemGroup Condition="'$(PackTests)' == 'true' And '$(Configuration)'=='FAKE_XRM_EASY_2013'">
@@ -153,6 +157,6 @@
   </ItemGroup>
   <ItemGroup Condition="'$(PackTests)' == 'true' And '$(Configuration)'=='FAKE_XRM_EASY_9'">
     <PackageReference Include="FakeXrmEasy.Core.v9" Version="[2.8.0-*,3.0)" />
-  </ItemGroup>
+  </ItemGroup> -->
 
 </Project>

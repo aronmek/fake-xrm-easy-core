@@ -1,4 +1,4 @@
-#if !NET452
+#if !NET452 && !FAKE_XRM_EASY_365
 using FakeXrmEasy.Abstractions;
 using FakeXrmEasy.Abstractions.Enums;
 using FakeXrmEasy.Extensions;

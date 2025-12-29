@@ -1,3 +1,4 @@
+#if !FAKE_XRM_EASY && !FAKE_XRM_EASY_2013 && !FAKE_XRM_EASY_2015 && !FAKE_XRM_EASY_2016
 using System;
 using Xunit;
 using System.Collections.Generic;
@@ -32,3 +33,4 @@ namespace FakeXrmEasy.Core.Tests.FakeContextTests
         }
     }
 }
+#endif

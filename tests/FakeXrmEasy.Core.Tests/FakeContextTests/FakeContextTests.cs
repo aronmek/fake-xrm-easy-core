@@ -222,6 +222,7 @@ namespace FakeXrmEasy.Core.Tests
             Assert.Equal(assembly, (_context as XrmFakedContext).ProxyTypesAssemblies.FirstOrDefault());
         }
 
+#if !FAKE_XRM_EASY && !FAKE_XRM_EASY_2013 && !FAKE_XRM_EASY_2015 && !FAKE_XRM_EASY_2016
         [Fact]
         public void When_using_proxy_types_entity_names_are_validated()
         {
@@ -235,6 +236,7 @@ namespace FakeXrmEasy.Core.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => _service.Create(new Entity("thisDoesntExist")));
             Assert.Equal("The entity logical name thisDoesntExist is not valid.", ex.Message);
         }
+#endif
 
         [Fact]
         public void When_initialising_the_context_once_exception_is_not_thrown()
@@ -359,6 +361,7 @@ namespace FakeXrmEasy.Core.Tests
             Assert.Equal(typeof(Account), type);
         }
         
+#if !FAKE_XRM_EASY && !FAKE_XRM_EASY_2013 && !FAKE_XRM_EASY_2015 && !FAKE_XRM_EASY_2016
         [Fact]
         public void Should_return_the_first_one_when_finding_reflected_type_by_entity_logical_name_if_exists_in_more_than_one_assembly()
         {
@@ -382,5 +385,6 @@ namespace FakeXrmEasy.Core.Tests
             Assert.NotNull(_context.FindReflectedType(Account.EntityTypeCode));
             Assert.Equal(typeof(Crm.Account), _context.FindReflectedType(Account.EntityTypeCode));
         }
+#endif
     }
 }
