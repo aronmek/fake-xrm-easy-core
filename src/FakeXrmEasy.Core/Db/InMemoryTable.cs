@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FakeXrmEasy.Abstractions;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace FakeXrmEasy.Core.Db
 {
@@ -13,6 +15,14 @@ namespace FakeXrmEasy.Core.Db
     /// </summary>
     internal class InMemoryTable
     {
+        internal struct EntityRecord 
+        {
+            public Entity Entity;
+            public long Sequence;
+        }
+
+        private static long _sequenceCounter = 0;
+
         /// <summary>
         /// The entity logical name for this table
         /// </summary>
@@ -21,7 +31,7 @@ namespace FakeXrmEasy.Core.Db
         /// <summary>
         /// Collection of entity records for this table
         /// </summary>
-        protected internal Dictionary<Guid, Entity> _rows;
+        protected internal ConcurrentDictionary<Guid, EntityRecord> _rows;
 
         /// <summary>
         /// The metadata definition for this table
@@ -34,7 +44,7 @@ namespace FakeXrmEasy.Core.Db
         public InMemoryTable(string logicalName)
         {
             _logicalName = logicalName;
-            _rows = new Dictionary<Guid, Entity>();
+            _rows = new ConcurrentDictionary<Guid, EntityRecord>();
             _metadata = new InMemoryTableMetadata();
         }
 
@@ -46,7 +56,7 @@ namespace FakeXrmEasy.Core.Db
         public InMemoryTable(string logicalName, EntityMetadata entityMetadata)
         {
             _logicalName = logicalName;
-            _rows = new Dictionary<Guid, Entity>();
+            _rows = new ConcurrentDictionary<Guid, EntityRecord>();
             _metadata = new InMemoryTableMetadata();
             SetMetadata(entityMetadata);
         }
@@ -77,7 +87,11 @@ namespace FakeXrmEasy.Core.Db
         /// <param name="e">The entity record to add</param>
         protected internal void Add(Entity e)
         {
-            _rows.Add(e.Id, e);
+            var record = new EntityRecord { Entity = e, Sequence = Interlocked.Increment(ref _sequenceCounter) };
+            if (!_rows.TryAdd(e.Id, record))
+            {
+                throw new ArgumentException("An item with the same key has already been added.");
+            }
         }
 
         /// <summary>
@@ -86,7 +100,9 @@ namespace FakeXrmEasy.Core.Db
         /// <param name="e"></param>
         protected internal void Replace(Entity e)
         {
-            _rows[e.Id] = e;
+            _rows.AddOrUpdate(e.Id, 
+                (id) => new EntityRecord { Entity = e, Sequence = Interlocked.Increment(ref _sequenceCounter) },
+                (id, oldRecord) => { oldRecord.Entity = e; return oldRecord; });
         }
 
 
@@ -96,7 +112,8 @@ namespace FakeXrmEasy.Core.Db
         /// <param name="key">The primary key</param>
         protected internal void Remove(Guid key)
         {
-            _rows.Remove(key);
+            EntityRecord removed;
+            _rows.TryRemove(key, out removed);
         }
 
         /// <summary>
@@ -106,7 +123,7 @@ namespace FakeXrmEasy.Core.Db
         /// <returns></returns>
         protected internal Entity GetById(Guid key)
         {
-            return _rows[key];
+            return _rows[key].Entity;
         }
 
         
@@ -118,7 +135,8 @@ namespace FakeXrmEasy.Core.Db
         {
             get
             {
-                return _rows.Values;
+                // Return entities sorted by insertion sequence to maintain deterministic order
+                return _rows.Values.OrderBy(x => x.Sequence).Select(x => x.Entity);
             }
         }
 
@@ -148,7 +166,8 @@ namespace FakeXrmEasy.Core.Db
         /// <returns></returns>
         protected internal Entity GetByKeyAttributeCollection(KeyAttributeCollection keyAttributeValues)
         {
-            return Rows.FirstOrDefault(row => keyAttributeValues.All(k => row.Attributes.ContainsKey(k.Key) && row.Attributes[k.Key] != null && row.Attributes[k.Key].Equals(k.Value)));
+            // Optimization: Iterate unsorted values for key lookup
+            return _rows.Values.Select(r => r.Entity).FirstOrDefault(row => keyAttributeValues.All(k => row.Attributes.ContainsKey(k.Key) && row.Attributes[k.Key] != null && row.Attributes[k.Key].Equals(k.Value)));
         }
 
 

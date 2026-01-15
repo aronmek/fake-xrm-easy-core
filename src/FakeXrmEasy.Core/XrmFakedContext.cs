@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Collections.Concurrent;
 
 using System.Runtime.CompilerServices;
 using FakeXrmEasy.Abstractions.FileStorage;
@@ -62,7 +63,7 @@ namespace FakeXrmEasy
         /// Cache for reflected types lookup by logical name for performance
         /// Key: logical name (lowercase), Value: List of types found across all assemblies
         /// </summary>
-        private Dictionary<string, List<Type>> _reflectedTypesCache { get; set; }
+        private ConcurrentDictionary<string, List<Type>> _reflectedTypesCache { get; set; }
 
         /// <summary>
         /// 
@@ -237,7 +238,7 @@ namespace FakeXrmEasy
             InitializationLevel = EntityInitializationLevel.Default;
 
             _proxyTypesAssemblies = new List<Assembly>();
-            _reflectedTypesCache = new Dictionary<string, List<Type>>();
+            _reflectedTypesCache = new ConcurrentDictionary<string, List<Type>>();
 
             GetOrganizationService();
 

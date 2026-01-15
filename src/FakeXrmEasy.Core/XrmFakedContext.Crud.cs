@@ -477,23 +477,36 @@ namespace FakeXrmEasy
 
             AddEntityRecordInternal(e);
 
-            //Update metadata for that entity
-            if (!AttributeMetadataNames.ContainsKey(e.LogicalName))
-                AttributeMetadataNames.Add(e.LogicalName, new Dictionary<string, string>());
-
-            //Update attribute metadata
-            if (ProxyTypesAssemblies.Count() > 0)
+            lock (AttributeMetadataNames)
             {
-                //If the context is using a proxy types assembly then we can just guess the metadata from the generated attributes
-                var types = GetReflectedTypes(e.LogicalName);
-                if (types.Any())
+                //Update metadata for that entity
+                if (!AttributeMetadataNames.ContainsKey(e.LogicalName))
+                    AttributeMetadataNames.Add(e.LogicalName, new Dictionary<string, string>());
+
+                //Update attribute metadata
+                if (ProxyTypesAssemblies.Count() > 0)
                 {
-                    var type = types.First();
-                    var props = type.GetProperties();
-                    foreach (var p in props)
+                    //If the context is using a proxy types assembly then we can just guess the metadata from the generated attributes
+                    var types = GetReflectedTypes(e.LogicalName);
+                    if (types.Any())
                     {
-                        if (!AttributeMetadataNames[e.LogicalName].ContainsKey(p.Name))
-                            AttributeMetadataNames[e.LogicalName].Add(p.Name, p.Name);
+                        var type = types.First();
+                        var props = type.GetProperties();
+                        foreach (var p in props)
+                        {
+                            if (!AttributeMetadataNames[e.LogicalName].ContainsKey(p.Name))
+                                AttributeMetadataNames[e.LogicalName].Add(p.Name, p.Name);
+                        }
+                    }
+                    else
+                    {
+                        //If dynamic entities are being used, then the only way of guessing if a property exists is just by checking
+                        //if the entity has the attribute in the dictionary
+                        foreach (var attKey in e.Attributes.Keys)
+                        {
+                            if (!AttributeMetadataNames[e.LogicalName].ContainsKey(attKey))
+                                AttributeMetadataNames[e.LogicalName].Add(attKey, attKey);
+                        }
                     }
                 }
                 else
@@ -505,16 +518,6 @@ namespace FakeXrmEasy
                         if (!AttributeMetadataNames[e.LogicalName].ContainsKey(attKey))
                             AttributeMetadataNames[e.LogicalName].Add(attKey, attKey);
                     }
-                }
-            }
-            else
-            {
-                //If dynamic entities are being used, then the only way of guessing if a property exists is just by checking
-                //if the entity has the attribute in the dictionary
-                foreach (var attKey in e.Attributes.Keys)
-                {
-                    if (!AttributeMetadataNames[e.LogicalName].ContainsKey(attKey))
-                        AttributeMetadataNames[e.LogicalName].Add(attKey, attKey);
                 }
             }
 

@@ -5,6 +5,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
 using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Concurrent;
 
 namespace FakeXrmEasy.Core.Db
 {
@@ -18,14 +19,14 @@ namespace FakeXrmEasy.Core.Db
         /// <summary>
         /// A collection of tables indexed by their logical name
         /// </summary>
-        protected internal Dictionary<string, InMemoryTable> _tables;
+        protected internal ConcurrentDictionary<string, InMemoryTable> _tables;
 
         /// <summary>
         /// Default InMemoryDb constructor with an empty list of tables
         /// </summary>
         public InMemoryDb()
         {
-            _tables = new Dictionary<string, InMemoryTable>();
+            _tables = new ConcurrentDictionary<string, InMemoryTable>();
         }
 
         /// <summary>
@@ -78,13 +79,11 @@ namespace FakeXrmEasy.Core.Db
         /// <param name="table"></param>
         protected internal void AddTable(string logicalName, out InMemoryTable table)
         {
-            if(_tables.ContainsKey(logicalName))
+            table = new InMemoryTable(logicalName);
+            if (!_tables.TryAdd(logicalName, table))
             {
                 throw new TableAlreadyExistsException(logicalName);
             }
-
-            table = new InMemoryTable(logicalName);
-            _tables.Add(logicalName, table);
         }
 
         /// <summary>
@@ -94,30 +93,18 @@ namespace FakeXrmEasy.Core.Db
         /// <param name="entityMetadata"></param>
         protected internal void AddOrUpdateMetadata(string logicalName, EntityMetadata entityMetadata)
         {
-            InMemoryTable table = null;
-            if (!_tables.ContainsKey(logicalName))
-            {
-                table = new InMemoryTable(logicalName, entityMetadata);
-                _tables.Add(logicalName, table);
-            }
-            else
-            {
-                _tables[logicalName].SetMetadata(entityMetadata);
-            }  
+            _tables.AddOrUpdate(logicalName, 
+                (name) => new InMemoryTable(name, entityMetadata), 
+                (name, existingTable) => 
+                {
+                    existingTable.SetMetadata(entityMetadata);
+                    return existingTable;
+                });
         }
 
         protected internal void AddEntityRecord(Entity e)
         {
-            InMemoryTable table;
-            if (!ContainsTable(e.LogicalName))
-            {
-                AddTable(e.LogicalName, out table);
-            }
-            else
-            {
-                table = GetTable(e.LogicalName);
-            }
-            
+            var table = _tables.GetOrAdd(e.LogicalName, (name) => new InMemoryTable(name));
             table.Add(e);
         }
 
@@ -134,22 +121,8 @@ namespace FakeXrmEasy.Core.Db
         
         protected internal void AddOrReplaceEntityRecord(Entity e)
         {
-            InMemoryTable table = null;
-            if (!ContainsTable(e.LogicalName))
-            {
-                AddTable(e.LogicalName, out table);
-            }
-
-            table = _tables[e.LogicalName];
-
-            if (table.Contains(e))
-            {
-                table.Replace(e);
-            }
-            else
-            {
-                table.Add(e);
-            }
+            var table = _tables.GetOrAdd(e.LogicalName, (name) => new InMemoryTable(name));
+            table.Replace(e);
         }
 
         protected internal IEnumerable<EntityMetadata> AllMetadata

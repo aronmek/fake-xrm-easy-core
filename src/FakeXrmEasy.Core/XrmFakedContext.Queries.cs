@@ -44,21 +44,20 @@ namespace FakeXrmEasy
             }
 
             // Check cache first
-            if (_reflectedTypesCache != null && _reflectedTypesCache.TryGetValue(key, out var cachedTypes))
+            if (_reflectedTypesCache != null)
             {
-                return new List<Type>(cachedTypes);
+                return _reflectedTypesCache.GetOrAdd(key, (k) => 
+                {
+                    return ProxyTypesAssemblies.Select(a => FindReflectedType(logicalName, a))
+                                            .Where(t => t != null)
+                                            .ToList();
+                });
             }
 
             // Not in cache, perform lookup
             var types = ProxyTypesAssemblies.Select(a => FindReflectedType(logicalName, a))
                                     .Where(t => t != null)
                                     .ToList();
-
-            // Store in cache
-            if (_reflectedTypesCache != null)
-            {
-                _reflectedTypesCache[key] = types;
-            }
 
             return types;
         }
