@@ -24,7 +24,7 @@ namespace FakeXrmEasy.Query
             {
                 var cEntityName = sEntityName;
                 //Create a new typed expression 
-                var typedConditionExpression = new TypedConditionExpression(c, qe);
+                var typedConditionExpression = new TypedConditionExpression(c, qe, sEntityName);
                 typedConditionExpression.IsOuter = bIsOuter;
 
                 string sAttributeName = c.AttributeName;
@@ -274,6 +274,27 @@ namespace FakeXrmEasy.Query
                     operatorExpression = Expression.Not(c.ToContainsValuesExpression(getNonBasicValueExpr, containsAttributeExpression));
                     break;
 #endif
+                
+                // Keep the default license check for unknown operators, but explicitely handle hierarchy operators to avoid the lock
+                case ConditionOperator.Under:
+                     operatorExpression = c.ToUnderExpression(context, entity);
+                     break;
+
+                case ConditionOperator.UnderOrEqual:
+                     operatorExpression = c.ToUnderOrEqualExpression(context, entity);
+                     break;
+
+                case ConditionOperator.Above:
+                     operatorExpression = c.ToAboveExpression(context, entity);
+                     break;
+
+                case ConditionOperator.AboveOrEqual:
+                     operatorExpression = c.ToAboveOrEqualExpression(context, entity);
+                     break;
+
+                case ConditionOperator.NotUnder:
+                     operatorExpression = c.ToNotUnderExpression(context, entity);
+                     break;
 
                 default:
                     throw UnsupportedExceptionFactory.New(context.LicenseContext.Value, string.Format("Operator {0} not yet implemented for condition expression", c.CondExpression.Operator.ToString()));

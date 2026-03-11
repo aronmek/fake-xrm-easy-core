@@ -186,35 +186,52 @@ namespace FakeXrmEasy.Extensions
         /// <param name="e"></param>
         /// <param name="qe"></param>
         /// <param name="context"></param>
+        /// <param name="suppressProxyTypes"></param>
         /// <returns></returns>
-        internal static Entity ProjectAttributes(this Entity e, QueryExpression qe, IXrmFakedContext context)
+        internal static Entity ProjectAttributes(this Entity e, QueryExpression qe, IXrmFakedContext context, bool suppressProxyTypes = false)
         {
+            Entity projected = null;
+
+            //However, if we are using proxy types, we must create a instance of the appropiate class
+            if (!suppressProxyTypes && context.ProxyTypesAssemblies.Count() > 0)
+            {
+                Type subClassType = null;
+                if(context is XrmFakedContext) 
+                {
+                    var types = (context as XrmFakedContext).GetReflectedTypes(e.LogicalName);
+                    if (types.Count == 1)
+                       subClassType = types[0];
+                }
+                else
+                {
+                    subClassType = context.FindReflectedType(e.LogicalName);
+                }
+
+                if (subClassType != null)
+                {
+                    var instance = Activator.CreateInstance(subClassType);
+                    projected = (Entity)instance;
+                    projected.Id = e.Id;
+                }
+                else
+                    projected = new Entity(e.LogicalName) { Id = e.Id }; //fallback to generic type if type not found
+            }
+            else
+                projected = new Entity(e.LogicalName) { Id = e.Id };
+
             if (qe.ColumnSet == null || qe.ColumnSet.AllColumns)
             {
-                return RemoveNullAttributes(e); //return all the original attributes
+                CloneEntity(e, projected, context);
+                
+                //Plus attributes from joins
+                foreach (var le in qe.LinkEntities)
+                {
+                    ProjectAttributes(RemoveNullAttributes(e), projected, le, context);
+                }
+                return RemoveNullAttributes(projected);
             }
             else
             {
-                //Return selected list of attributes in a projected entity
-                Entity projected = null;
-
-                //However, if we are using proxy types, we must create a instance of the appropiate class
-                if (context.ProxyTypesAssemblies.Count() > 0)
-                {
-                    var subClassType = context.FindReflectedType(e.LogicalName);
-                    if (subClassType != null)
-                    {
-                        var instance = Activator.CreateInstance(subClassType);
-                        projected = (Entity)instance;
-                        projected.Id = e.Id;
-                    }
-                    else
-                        projected = new Entity(e.LogicalName) { Id = e.Id }; //fallback to generic type if type not found
-                }
-                else
-                    projected = new Entity(e.LogicalName) { Id = e.Id };
-
-
                 #if FAKE_XRM_EASY_9
                 qe.ColumnSet.AddMissingColumnAliases();
                 #endif

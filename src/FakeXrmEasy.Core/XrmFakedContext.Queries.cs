@@ -48,14 +48,14 @@ namespace FakeXrmEasy
             {
                 return _reflectedTypesCache.GetOrAdd(key, (k) => 
                 {
-                    return ProxyTypesAssemblies.Select(a => FindReflectedType(logicalName, a))
+                    return ProxyTypesAssemblies.SelectMany(a => FindReflectedTypes(logicalName, a))
                                             .Where(t => t != null)
                                             .ToList();
                 });
             }
 
             // Not in cache, perform lookup
-            var types = ProxyTypesAssemblies.Select(a => FindReflectedType(logicalName, a))
+            var types = ProxyTypesAssemblies.SelectMany(a => FindReflectedTypes(logicalName, a))
                                     .Where(t => t != null)
                                     .ToList();
 
@@ -93,18 +93,17 @@ namespace FakeXrmEasy
         /// Early-bound type of <paramref name="logicalName"/> if it's found
         /// from <paramref name="assembly"/>. Otherwise null is returned.
         /// </returns>
-        private static Type FindReflectedType(string logicalName,
+        private static IEnumerable<Type> FindReflectedTypes(string logicalName,
                                               Assembly assembly)
         {
             try
             {
-                var subClassType = assembly.GetTypes()
+                var subClassTypes = assembly.GetTypes()
                         .Where(t => typeof(Entity).IsAssignableFrom(t))
                         .Where(t => t.GetCustomAttributes(typeof(EntityLogicalNameAttribute), true).Length > 0)
-                        .Where(t => ((EntityLogicalNameAttribute)t.GetCustomAttributes(typeof(EntityLogicalNameAttribute), true)[0]).LogicalName.Equals(logicalName.ToLower()))
-                        .FirstOrDefault();
+                        .Where(t => ((EntityLogicalNameAttribute)t.GetCustomAttributes(typeof(EntityLogicalNameAttribute), true)[0]).LogicalName.Equals(logicalName.ToLower()));
 
-                return subClassType;
+                return subClassTypes;
             }
             catch (ReflectionTypeLoadException exception)
             {
@@ -266,7 +265,20 @@ namespace FakeXrmEasy
         protected IQueryable<T> CreateQuery<T>(string entityLogicalName)
             where T : Entity
         {
-            var subClassType = typeof(T) != typeof(Entity) ? typeof(T) : FindReflectedType(entityLogicalName);
+            Type subClassType = null;
+            if (typeof(T) != typeof(Entity))
+            {
+                subClassType = typeof(T);
+            }
+            else
+            {
+                var reflectedTypes = GetReflectedTypes(entityLogicalName);
+                if (reflectedTypes.Count == 1)
+                {
+                    subClassType = reflectedTypes[0];
+                }
+            }
+
             if (subClassType == null && !(typeof(T) == typeof(Entity)) || (typeof(T) == typeof(Entity) && string.IsNullOrWhiteSpace(entityLogicalName)))
             {
                 throw new Exception($"The type {entityLogicalName} was not found");

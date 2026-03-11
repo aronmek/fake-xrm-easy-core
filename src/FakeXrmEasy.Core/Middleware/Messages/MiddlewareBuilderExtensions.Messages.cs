@@ -35,7 +35,7 @@ namespace FakeXrmEasy.Middleware.Messages
                     .Select(t => Activator.CreateInstance(t) as IFakeMessageExecutor)
                     .Where(t => t.GetResponsibleRequestType() != typeof(OrganizationRequest)) //Exclude generic messages
                     .ToDictionary(t => t.GetResponsibleRequestType(), t => t);
-                    
+
                 var messageExecutors = new MessageExecutors(fakeMessageExecutorsDictionary);
 
                 if (!context.HasProperty<MessageExecutors>())

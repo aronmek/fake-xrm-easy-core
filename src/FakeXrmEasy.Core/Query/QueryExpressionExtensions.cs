@@ -54,8 +54,9 @@ namespace FakeXrmEasy.Query
         /// </summary>
         /// <param name="qe"></param>
         /// <param name="context"></param>
+        /// <param name="suppressProxyTypes"></param>
         /// <returns></returns>
-        internal static IQueryable<Entity> ToQueryable(this QueryExpression qe, IXrmFakedContext context)
+        internal static IQueryable<Entity> ToQueryable(this QueryExpression qe, IXrmFakedContext context, bool suppressProxyTypes = false)
         {
             if (qe == null) return null;
 
@@ -122,7 +123,7 @@ namespace FakeXrmEasy.Query
             }
 
             //Project the attributes in the root column set  (must be applied after the where and order clauses, not before!!)
-            query = query.Select(x => x.Clone(x.GetType(), context as XrmFakedContext).ProjectAttributes(qe, context as XrmFakedContext));
+            query = query.Select(x => x.Clone(x.GetType(), context as XrmFakedContext).ProjectAttributes(qe, context as XrmFakedContext, suppressProxyTypes));
 
             //Apply column aliases
             query = query.Select(e => e.ApplyColumnAliases(qe, context));

@@ -159,6 +159,11 @@ namespace FakeXrmEasy
         public int MaxRetrieveCount { get; set; }
 
         /// <summary>
+        /// When True, RetrieveMultipleExecutor will not project attributes to proxy types even if they are available.
+        /// </summary>
+        public bool SuppressProxyTypesForRetrieveMultiple { get; set; }
+
+        /// <summary>
         /// 
         /// </summary>
         public EntityInitializationLevel InitializationLevel { get; set; }

@@ -1,7 +1,7 @@
 param (
     [string]$packageSource = "local-packages",
     [string]$versionSuffix = "",
-    [string]$targetFrameworks = "netcoreapp3.1"
+    [string]$targetFrameworks = "all"
  )
 
 Write-Host "Running with versionSuffix '$($versionSuffix)'..."

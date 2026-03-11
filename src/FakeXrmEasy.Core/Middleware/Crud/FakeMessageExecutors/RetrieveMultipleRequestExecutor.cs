@@ -20,11 +20,6 @@ namespace FakeXrmEasy.Middleware.Crud.FakeMessageExecutors
     /// </summary>
     public class RetrieveMultipleRequestExecutor : IFakeMessageExecutor
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
         public bool CanExecute(OrganizationRequest request)
         {
             return request is RetrieveMultipleRequest;
@@ -51,7 +46,7 @@ namespace FakeXrmEasy.Middleware.Crud.FakeMessageExecutors
                 qe = (request.Query as QueryExpression).Clone();
                 entityName = qe.EntityName;
 
-                var linqQuery = qe.ToQueryable(context);
+                var linqQuery = qe.ToQueryable(context, context.SuppressProxyTypesForRetrieveMultiple);
                 list = linqQuery.ToList();
             }
             else if (request.Query is FetchExpression)
@@ -61,7 +56,7 @@ namespace FakeXrmEasy.Middleware.Crud.FakeMessageExecutors
                 qe = fetchXml.ToQueryExpression(context);
                 entityName = qe.EntityName;
 
-                var linqQuery = qe.ToQueryable(context);
+                var linqQuery = qe.ToQueryable(context, context.SuppressProxyTypesForRetrieveMultiple);
                 list = linqQuery.ToList();
 
                 if (xmlDoc.HasAggregations())
@@ -92,7 +87,7 @@ namespace FakeXrmEasy.Middleware.Crud.FakeMessageExecutors
                 qe.TopCount = query.TopCount;
 
                 // QueryExpression now done... execute it!
-                var linqQuery = qe.ToQueryable(context);
+                var linqQuery = qe.ToQueryable(context, context.SuppressProxyTypesForRetrieveMultiple);
                 list = linqQuery.ToList();
             }
             else
@@ -145,6 +140,7 @@ namespace FakeXrmEasy.Middleware.Crud.FakeMessageExecutors
             {
                 numberToGet = list.Count - (pageSize * (pageNumber - 1));
             }
+
 
             var recordsToReturn = startPosition + numberToGet > list.Count ? new List<Entity>() : list.GetRange(startPosition, numberToGet);
 

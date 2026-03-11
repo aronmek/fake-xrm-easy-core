@@ -34,6 +34,12 @@ namespace FakeXrmEasy.Query
         public bool IsOuter { get; set; }
 
         /// <summary>
+        /// The entity name of the attribute in the condition expression.
+        /// If not set, it defaults to the QueryExpression.EntityName
+        /// </summary>
+        internal string EntityName { get; set; }
+
+        /// <summary>
         /// Creates a TypedConditionExpression from an existing ConditionExpression with no attribute type information
         /// </summary>
         /// <param name="c"></param>
@@ -43,6 +49,21 @@ namespace FakeXrmEasy.Query
             IsOuter = false;
             CondExpression = c;
             QueryExpression = qe;
+            EntityName = qe.EntityName;
+        }
+
+        /// <summary>
+        /// Creates a TypedConditionExpression from an existing ConditionExpression with no attribute type information
+        /// </summary>
+        /// <param name="c"></param>
+        /// <param name="qe"></param>
+        /// <param name="entityName"></param>
+        internal TypedConditionExpression(ConditionExpression c, QueryExpression qe, string entityName)
+        {
+            IsOuter = false;
+            CondExpression = c;
+            QueryExpression = qe;
+            EntityName = entityName;
         }
 
         internal void ValidateSupportedTypedExpression()

@@ -12,9 +12,9 @@ $tempNupkgFolder = './nupkgs'
 
 Write-Host "Packing All Configurations for project $($projectName)" -ForegroundColor Green
 
- if($targetFrameworks -eq "netcoreapp3.1")
+ if($targetFrameworks -eq "netcoreapp3.1" -or $targetFrameworks -eq "all")
  {
-    ./pack-configuration.ps1 -targetFramework $targetFrameworks -projectName $projectName -projectPath $projectPath -packageIdPrefix $packageIdPrefix -versionSuffix $versionSuffix -packTests "true" -configuration "FAKE_XRM_EASY_365" 
+    # ./pack-configuration.ps1 -targetFramework $targetFrameworks -projectName $projectName -projectPath $projectPath -packageIdPrefix $packageIdPrefix -versionSuffix $versionSuffix -packTests "true" -configuration "FAKE_XRM_EASY_365" 
     ./pack-configuration.ps1 -targetFramework $targetFrameworks -projectName $projectName -projectPath $projectPath -packageIdPrefix $packageIdPrefix -versionSuffix $versionSuffix -packTests "true" -configuration "FAKE_XRM_EASY_9" 
  }
  else {

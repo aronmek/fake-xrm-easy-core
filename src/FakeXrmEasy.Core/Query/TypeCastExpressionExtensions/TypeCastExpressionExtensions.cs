@@ -176,6 +176,10 @@ namespace FakeXrmEasy.Query
                 var cast = (value as Money).Value;
                 return Expression.Constant(cast);
             }
+            else if (value != null && value.GetType().IsEnum)
+            {
+                return Expression.Constant((int)value, typeof(int));
+            }
             return Expression.Constant(value);
         }
 
